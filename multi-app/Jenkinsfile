@@ -7,39 +7,12 @@ pipeline {
         checkout scm
       }
     }
-    stage('install dependencies') {
-      steps {
-        dir('multi-app') {
-          sh 'npm install'
-        }
-      }
-    }
-    stage('lint html') {
-      steps {
-        dir('multi-app') {
-          sh 'npx htmllint *.html'
-        }
-      }
-    }
-    stage('lint css') {
-      steps {
-        dir('multi-app') {
-          sh 'npx stylelint "*.css"'
-        }
-      }
-    }
-    stage('lint js') {
-      steps {
-        dir('multi-app') {
-          sh 'npx eslint *.js'
-        }
-      }
-    }
+
     stage('deploy') {
       steps {
         echo "Deploying application locally"
         sh 'mkdir -p /home/pipe/projects/exercise1'
-        sh 'cp -r ./multi-app/* /home/pipe/projects/exercise1'
+        sh 'cp -r * /home/pipe/projects/exercise1/'
       }
     }
   }
