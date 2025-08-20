@@ -1,0 +1,42 @@
+pipeline{
+  agent any
+
+  stages{
+    stage('checkout'){
+      steps{
+        checkout scm
+      }
+    }
+    stage('lint html'){
+      steps{
+        sh 'npx htmllint *.html'
+      }
+    }
+    stage('lint css'){
+      steps{
+        sh 'npx stylelint "*.css" '
+      }
+    }
+    stage('lint js'){
+          steps{
+            sh 'npx eslint *.js'
+          }
+    }
+    stage('deploy'){
+      steps{
+        echo "Deploying application locally"
+        sh 'mkdir -p /home/pipe/projects/exercise1' 
+        sh 'cp -r ./multi-app/* /home/pipe/projects/exercise1'
+      }
+    }
+  }
+
+post {
+  success {
+    echo "Pipeline succeded! App is ready for deployment"
+  }
+  failure{
+    echo "Pipeline failed, Please check logs for errors."
+  }
+  }
+}
