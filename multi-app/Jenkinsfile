@@ -7,6 +7,11 @@ pipeline{
         checkout scm
       }
     }
+    stage('install dependencies'){
+      steps{
+        sh 'npm install ' 
+      }
+    }
     stage('lint html'){
       steps{
         sh 'npx htmllint *.html'
