@@ -11,8 +11,8 @@ pipeline {
     stage('deploy') {
       steps {
         echo "Deploying application locally"
-        sh 'mkdir -p /home/pipe/projects/exercise1'
-        sh 'cp -r * /home/pipe/projects/exercise1/'
+        /*sh 'mkdir -p /home/pipe/projects/exercise1'*/
+        /*sh 'cp -r * /home/pipe/projects/exercise1/'*/
       }
     }
   }
