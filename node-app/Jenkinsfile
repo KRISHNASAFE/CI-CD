@@ -1,6 +1,4 @@
-pipeline {
-  agent any 
-  stages {
+node {
     stage('checkout'){
       echo "checking out sc" 
       checkout scm
