@@ -14,4 +14,13 @@ pipeline {
       }
     }
   }
+
+  post {
+    success {
+      echo "Pipeline succeeded! App is ready for deployment"
+    }
+    failure {
+      echo "Pipeline failed, Please check logs for errors."
+    }
+  }
 }
