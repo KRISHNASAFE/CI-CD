@@ -10,5 +10,6 @@ node {
   stage('Deploy') {
     echo "This is deploy stage."
     echo "Deploying application locally"
+    echo "  "
   }
 }
