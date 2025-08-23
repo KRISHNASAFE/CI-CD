@@ -11,7 +11,7 @@ pipeline {
         stage('Build Node.js App') {
             when {
                 expression {
-                    // Check if files in node-app changed
+                    // Logic to check if files in node-app changed
                     def changes = sh(
                         script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/' || true",
                         returnStdout: true
@@ -24,7 +24,7 @@ pipeline {
                     script {
                         echo 'Building Node.js application'
                         sh 'npm install'
-                        sh 'npm run build || true' // Optional: avoid fail if build not needed
+                        sh 'npm run build || true' //avoid fail if build not needed
                         sh 'npm run test'
                     }
                 }
@@ -34,7 +34,7 @@ pipeline {
         stage('Build Static Web App') {
             when {
                 expression {
-                    // Check if files in multi-app changed
+                    // Logic to check if files in multi-app changed
                     def changes = sh(
                         script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
                         returnStdout: true
@@ -46,7 +46,7 @@ pipeline {
                 dir('multi-app') {
                     script {
                         echo 'Building Static Web project'
-                        // Add build logic here
+                        // Add your build logic here
                     }
                 }
             }
@@ -55,7 +55,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying the app'
-                // Deploy logic
+                // Deploy logic either server or creating image maybe using docker and pushing it.
             }
         }
     }
