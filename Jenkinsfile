@@ -17,7 +17,7 @@ pipeline {
             def pipelineFile = "${folder}/Jenkinsfile"
             if (fileExists(pipelineFile)) {
               echo "Running pipeline in ${pipelineFile}"
-              load(pipelineFile)() // this works only if it's scripted, not declarative
+              load(pipelineFile) // this works only if it's scripted, not declarative
             } else {
               echo "No Jenkinsfile in ${folder}, skipping..."
             }
