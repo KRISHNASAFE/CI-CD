@@ -9,6 +9,7 @@ pipeline {
         sh 'npm install'
       }
       stage('build') {
+        echo "Build is in progress" 
         sh 'npm run build' 
       }
     }
