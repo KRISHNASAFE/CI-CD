@@ -1,26 +1,18 @@
 node {
-    stage('checkout'){
-      echo "checking out sc" 
-      checkout scm
-    }
-    stage('install dependencies') {
-      steps {
-        echo "Installing dependencies....." 
-        sh 'npm install'
-      }
-      stage('build') {
-        echo "Build is in progress" 
-        sh 'npm run build' 
-      }
-    }
+  stage('Checkout') {
+    echo "Checking out source code"
+    checkout scm
   }
 
-  post {
-    success {
-      echo "Pipeline succeeded! App is ready for deployment"
-    }
-    failure {
-      echo "Pipeline failed, Please check logs for errors."
-    }
+  stage('Install dependencies') {
+    echo "Installing dependencies"
+    sh 'npm install'
   }
+
+  stage('Build') {
+    echo "Build is in progress"
+    sh 'npm run build'
+  }
+
+  echo "Pipeline succeeded! App is ready for deployment"
 }
