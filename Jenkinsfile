@@ -1,29 +1,39 @@
 pipeline {
   agent any
   stages {
-    stage('Detect Changed Folders') {
-      steps {
-        script {
-          def changedFolders = sh(
-            script: "git diff --name-only HEAD~1 HEAD | cut -d/ -f1 | sort -u",
-            returnStdout: true
-          ).trim().split("\n")
+            stage('Detect and Run Pipelines') {
+            steps {  
+                script {
+                    // Get changed folders at 2 levels (e.g., node-folder/app1)
+                    def changedFolders = sh(
+                        script: "git diff --name-only origin/main...HEAD | awk -F/ '{print $1\"/\"$2}' | sort -u",
+                        returnStdout: true
+                    ).trim().split("\n")
 
-          echo "Changed folders: ${changedFolders}"
+                    echo "Changed folders: ${changedFolders}"
 
-          for (folder in changedFolders) {
-            if (!folder?.trim()) continue
+                    for (folder in changedFolders) {
+                        // Special case: root-level folders like web-app
+                        def possiblePaths = ["${folder}/Jenkinsfile", "${folder?.split('/')?.getAt(0)}/Jenkinsfile"]
 
-            def pipelineFile = "${folder}/Jenkinsfile"
-            if (fileExists(pipelineFile)) {
-              echo "Running pipeline in ${pipelineFile}"
-              load(pipelineFile) // this works only if it's scripted, not declarative
-            } else {
-              echo "No Jenkinsfile in ${folder}, skipping..."
-            }
-          }
+                        def found = false
+
+                        for (path in possiblePaths) {
+                            if (fileExists(path)) {
+                                echo "Found Jenkinsfile: ${path}"
+                                load(path).call()
+                                found = true
+                                break
+                            }
+                        }
+
+                        if (!found) {
+                            echo "No Jenkinsfile found for ${folder}, skipping..."
+                        }
+                    }
+                }
+      
+             }
         }
-      }
     }
-  }
 }
