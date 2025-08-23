@@ -26,7 +26,6 @@ pipeline {
                         sh 'npm install'
                         sh 'npm run build || true' // Optional: avoid fail if build not needed
                         sh 'npm run test'
-                        sh 'npm run start'
                     }
                 }
             }
