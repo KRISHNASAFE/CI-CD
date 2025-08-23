@@ -6,7 +6,7 @@ pipeline {
                 script {
                     // Get changed folders at 2 levels (e.g., node-folder/app1)
                     def changedFolders = sh(
-                        script: "git diff --name-only origin/main...HEAD | awk -F/ '{print $1\"/\"$5}' | sort -u",
+                        script: "git diff --name-only origin/main...HEAD | awk -F/ '{print $1\"/\"${5}}' | sort -u",
                         returnStdout: true
                     ).trim().split("\n")
 
