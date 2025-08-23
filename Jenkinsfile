@@ -13,13 +13,13 @@ pipeline{
 
           for (folder in changedFolders) {
             def pipelineFile = "${folder}/Jenkinsfile"
-            if (fileExists(pipelineFile) {
+            if (fileExists(pipelineFile)) {
               echo "Running pipeline in ${pipelineFile}"
               load(pipelineFile).call()
             }
-                else {
-                  echo "No Jenkinsfile in ${folder}, skipping..."
-                }
+            else {
+              echo "No Jenkinsfile in ${folder}, skipping..."
+            }
           }
         }
       }
