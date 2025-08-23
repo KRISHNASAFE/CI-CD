@@ -1,1 +1,16 @@
-
+pipeline {
+  agent any 
+  stages {
+    stage('checkout'){
+      checkout scm
+    }
+    stage('install dependencies') {
+      steps {
+        sh 'npm install'
+      }
+      stage('build') {
+        sh 'npm run build' 
+      }
+    }
+  }
+}
