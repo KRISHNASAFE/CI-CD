@@ -5,11 +5,11 @@ pipeline{
       steps {
         script {
           def changedFolders = sh(
-            script: "git diff --name-noly origin/main...HEAD | cut -d/ -f1 | sort -u",
+            script: "git diff --name-only origin/main...HEAD | cut -d/ -f1 | sort -u",
             returnStdout: true
             ).trim().split("\n")
 
-          echo "Changes folders: ${changesFolders}"
+          echo "Changes folders: ${changedFolders}"
 
           for (folder in changedFolders) {
             def pipelineFile = "${folder}/Jenkinsfile"
