@@ -1,0 +1,44 @@
+h1{
+    text-align: center;
+    color: crimson;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container {
+    display: block;
+    background-color:lightyellow;
+    margin: 20px;
+    height: auto;
+    width: auto;
+    align-items: center;
+}
+
+.name{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-top: 20px;
+    padding: 10px;
+
+}
+
+.author{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-top: 20px;
+    padding: 10px;
+    
+}
+
+.type{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-top: 20px;
+    padding: 10px;
+    
+}
+
+.item{
+    margin: 15px;
+    padding: 10px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: lightskyblue;
+    color: blueviolet;
+    
+}
