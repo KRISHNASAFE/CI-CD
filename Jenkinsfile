@@ -20,6 +20,8 @@ pipeline {
                         echo 'Building Node.js application'
                         sh 'npm install'
                         sh 'npm run build'
+                        sh 'npm run test' 
+                        sh 'npm run start' 
                     }
                 }
             }
