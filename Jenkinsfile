@@ -27,7 +27,7 @@ pipeline{
              sh 'npm install'
              sh 'npm run build || true'
              sh 'npm run test'
-             sh "docker build -t ${DOCKER_IMAGE_NODE}:v1 ."
+             sh "docker build -t ${DOCKER_IMAGE_NODE}/node-app:v1 ."
           }
         }
       }
@@ -46,7 +46,7 @@ pipeline{
         script{
           withCredentials([usernamePassword(credentialsId: "${DOCKER_REGISTRY_CREDS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                        sh "docker push ${DOCKER_IMAGE_NODE}:v1"
+                        sh "docker push ${DOCKER_IMAGE_NODE}/node-app:v1"
         }
       }
     }
@@ -65,7 +65,7 @@ pipeline{
         dir('multi-app') {
           script{
             echo "Building static-web-project"
-            sh 'docker build -t ${DOCKER_IMAGES_STATIC}:v1 .'
+            sh 'docker build -t ${DOCKER_IMAGES_STATIC}/webimage:v5 .'
           }
         }
       }
@@ -84,7 +84,7 @@ pipeline{
         script{
           withCredentials([usernamePassword(credentialsId: "${DOCKER_REGISTRY_CREDS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                        sh "docker push ${DOCKER_IMAGE_STATIC}:v1"
+                        sh "docker push ${DOCKER_IMAGE_STATIC}/webimage:v5"
         }
       }
     }
