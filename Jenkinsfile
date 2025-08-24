@@ -1,100 +1,106 @@
-pipeline{
-  agent any 
+pipeline {
+  agent any
+
   environment {
-    DOCKER_IMAGE_NODE = '${DOCKER_USERNAME}/node-app'
-    DOCKER_IMAGE_STATIC = '${DOCKER_USERNAME}/webimage'
- }
-  stages{
+    DOCKER_IMAGE_NODE = "${DOCKER_USERNAME}/node-app"
+    DOCKER_IMAGE_STATIC = "${DOCKER_USERNAME}/webimage"
+  }
+
+  stages {
     stage('checkout') {
-      steps{
-      checkout scm
+      steps {
+        checkout scm
       }
     }
+
     stage('build node.js app') {
-      when{
-        expression{
-          return sh(
-            script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/**' || true",
+      when {
+        expression {
+          def changes = sh(
+            script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/' || true",
             returnStdout: true
-          ).trim() 
+          ).trim()
           return changes != ''
         }
       }
-      steps{
+      steps {
         dir('node-app') {
-          script{
-             echo 'Building Node.js application'
-             sh 'npm install'
-             sh 'npm run build || true'
-             sh 'npm run test'
-             sh "docker build -t ${DOCKER_USERNAME}/node-app:v1 ."
+          script {
+            echo 'Building Node.js application'
+            sh 'npm install'
+            sh 'npm run build || true'
+            sh 'npm run test'
+            sh "docker build -t ${DOCKER_IMAGE_NODE}:v1 ."
           }
         }
       }
     }
+
     stage('deploy node js app') {
-      when{
-        expression{
-          return sh(
-          script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/' || true",
-          returnStdout: true
-          ).trim() 
+      when {
+        expression {
+          def changes = sh(
+            script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/' || true",
+            returnStdout: true
+          ).trim()
           return changes != ''
         }
       }
-      steps{
-        script{
+      steps {
+        script {
           withCredentials([usernamePassword(credentialsId: "${DOCKER_REGISTRY_CREDS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                        sh "docker push ${DOCKER_USERNAME}/node-app:v1"
+            sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+            sh "docker push ${DOCKER_IMAGE_NODE}:v1"
+          }
         }
       }
     }
-  }
+
     stage('build-web-app-static') {
       when {
-            expression {
-              return sh(
-              script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
-              returnStdout: true
-              ).trim() 
-              return changes != ''
-            }
+        expression {
+          def changes = sh(
+            script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
+            returnStdout: true
+          ).trim()
+          return changes != ''
         }
-      steps{
+      }
+      steps {
         dir('multi-app') {
-          script{
+          script {
             echo "Building static-web-project"
-            sh 'docker build -t ${DOCKER_USERNAME}/webimage:v5 .'
+            sh "docker build -t ${DOCKER_IMAGE_STATIC}:v5 ."
           }
         }
       }
     }
+
     stage('deploy-web-app-static') {
-      when{
-        expression{
-          return sh(
+      when {
+        expression {
+          def changes = sh(
             script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
             returnStdout: true
-          ).trim 
+          ).trim()
           return changes != ''
         }
       }
-      steps{
-        script{
+      steps {
+        script {
           withCredentials([usernamePassword(credentialsId: "${DOCKER_REGISTRY_CREDS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                        sh "docker push ${DOCKER_USERNAME}/webimage:v5"
+            sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+            sh "docker push ${DOCKER_IMAGE_STATIC}:v5"
+          }
         }
       }
     }
   }
-}
 
-  post{
-    always{
+  post {
+    always {
       echo 'Cleaning up'
-      sh 'docker logout || true' 
+      sh 'docker logout || true'
     }
   }
 }
