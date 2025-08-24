@@ -1,8 +1,8 @@
 pipeline{
   agent any 
   environment {
-    DOCKER_IMAGE_NODE = 'your-dockerhub-username/node-app'
-    DOCKER_IMAGE_STATIC = 'your-dockerhub-username/webimage'
+    DOCKER_IMAGE_NODE = '${DOCKER_USERNAME}/node-app'
+    DOCKER_IMAGE_STATIC = '${DOCKER_USERNAME}/webimage'
  }
   stages{
     stage('checkout'){
@@ -60,7 +60,7 @@ pipeline{
         dir('multi-app'){
           script{
             echo "Building static-web-project"
-            sh 'docker build -t ${DOCKER_IMAGES_STATIC}:v1 ."
+            sh 'docker build -t ${DOCKER_IMAGES_STATIC}:v1 .'
           }
         }
       }
