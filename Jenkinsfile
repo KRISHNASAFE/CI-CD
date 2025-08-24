@@ -14,9 +14,10 @@ pipeline{
       when{
         expression{
           return sh(
-            script: "git diff --name-only HEAD-1 HEAD | grep '^node-app/**' || true",
+            script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/**' || true",
             returnStdout: true
-          ).trim() != ''
+          ).trim() 
+          return changes != ''
         }
       }
       steps{
@@ -37,7 +38,8 @@ pipeline{
           return sh(
           script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/' || true",
           returnStdout: true
-          ).trim() != ''
+          ).trim() 
+          return changes != ''
         }
       }
       steps{
@@ -55,7 +57,8 @@ pipeline{
               return sh(
               script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
               returnStdout: true
-              ).trim() != ''
+              ).trim() 
+              return changes != ''
             }
         }
       steps{
@@ -73,7 +76,8 @@ pipeline{
           return sh(
             script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
             returnStdout: true
-          ).trim != ''
+          ).trim 
+          return changes != ''
         }
       }
       steps{
