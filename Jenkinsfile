@@ -3,6 +3,7 @@ pipeline {
 
   environment {
     DOCKER_REGISTRY_CREDS = "DOCKER_REGISTRY_CREDS"
+    DOCKER_USERNAME = "dockcg007"
     DOCKER_IMAGE_NODE = "${DOCKER_USERNAME}/node-app"
     DOCKER_IMAGE_STATIC = "${DOCKER_USERNAME}/webimage"
   }
