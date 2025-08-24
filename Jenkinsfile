@@ -27,7 +27,7 @@ pipeline{
              sh 'npm install'
              sh 'npm run build || true'
              sh 'npm run test'
-             sh "docker build -t ${DOCKER_IMAGE_NODE}:latest ."
+             sh "docker build -t ${DOCKER_IMAGE_NODE}:v1 ."
           }
         }
       }
