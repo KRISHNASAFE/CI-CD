@@ -5,10 +5,10 @@ pipeline{
     DOCKER_IMAGE_STATIC = '${DOCKER_USERNAME}/webimage'
  }
   stages{
-    stage('checkout'){
+    stage('checkout') {
       checkout scm
     }
-    stage('build node.js app'){
+    stage('build node.js app') {
       when{
         expression{
           return sh(
@@ -18,7 +18,7 @@ pipeline{
         }
       }
       steps{
-        dir('node-app'){
+        dir('node-app') {
           script{
              echo 'Building Node.js application'
              sh 'npm install'
@@ -29,7 +29,7 @@ pipeline{
         }
       }
     }
-    stage('deploy node js app'){
+    stage('deploy node js app') {
       when{
         expression{
           return sh(
@@ -47,7 +47,7 @@ pipeline{
       }
     }
   }
-    stage('build-web-app-static'){
+    stage('build-web-app-static') {
       when {
             expression {
               return sh(
@@ -57,7 +57,7 @@ pipeline{
             }
         }
       steps{
-        dir('multi-app'){
+        dir('multi-app') {
           script{
             echo "Building static-web-project"
             sh 'docker build -t ${DOCKER_IMAGES_STATIC}:v1 .'
@@ -65,7 +65,7 @@ pipeline{
         }
       }
     }
-    stage('deploy-web-app-static'){
+    stage('deploy-web-app-static') {
       when{
         expression{
           return sh(
