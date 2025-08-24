@@ -2,7 +2,7 @@ pipeline{
   agent any 
   environment {
     DOCKER_IMAGE_NODE = 'your-dockerhub-username/node-app'
-    DOCKER_IMAGE_STATIC = 'your-dockerhub-username/web-app-static'
+    DOCKER_IMAGE_STATIC = 'your-dockerhub-username/webimage'
  }
   stages{
     stage('checkout'){
