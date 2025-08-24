@@ -1,6 +1,5 @@
 pipeline {
     agent any
-
     stages {
         stage('Checkout') {
             steps {
@@ -26,6 +25,7 @@ pipeline {
                         sh 'npm install'
                         sh 'npm run build || true' //avoid fail if build not needed
                         sh 'npm run test'
+                        sh "docker build -t ${DOCKER_IMAGE_NODE}:v1 ."
                     }
                 }
             }
@@ -56,6 +56,8 @@ pipeline {
             steps {
                 echo 'Deploying the app'
                 // Deploy logic either server or creating image maybe using docker and pushing it.
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_REGISTRY_CREDS}", passwordVariable: "${DOCKER_PASSWORD}", usernameVariable: "${DOCKER_USERNAME}")])
+                sh 'docker push'
             }
         }
     }
