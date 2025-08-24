@@ -5,8 +5,10 @@ pipeline{
     DOCKER_IMAGE_STATIC = '${DOCKER_USERNAME}/webimage'
  }
   stages{
-    steps('checkout') {
+    stage('checkout') {
+      steps{
       checkout scm
+      }
     }
     stage('build node.js app') {
       when{
