@@ -5,7 +5,7 @@ FROM node:alpine
 WORKDIR app
 
 # Copy package.json & *.json files for docker cache.
-COPY pakacge*.json ./
+COPY package*.json ./
 
 # Install dependencies
 RUN npm install --production
