@@ -1,13 +1,27 @@
-# CI-CD
+# CI/CD Pipeline Projects
 
-This project is for Jenkins CI/CD. I am writing jenkins file for ci & cd stages of various applications. 
+## Overview
+This repository demonstrates CI/CD pipeline implementations using GitHub Actions, Jenkins, and DevOps best practices.
 
-The first application is multi-app which is static app based on html, css, js. 
+## Features
+- Automated build pipelines
+- Automated testing
+- Docker image builds
+- Deployment automation
+- GitHub Actions workflows
 
-The second application is node.js based book management system. 
+## Tools Used
+- GitHub Actions
+- Jenkins
+- Docker
+- Node.js
+- Python
 
-So I am using single file for building ci for both projects depending on git recent commit occured on which project folder. 
-After identifying that we are moving to build app code package or bundle from this.
+## Pipeline Flow
+Code Push → Build → Test → Docker Build → Deploy
 
-
-
+## Learning Outcomes
+- CI/CD automation
+- DevOps workflows
+- Build optimization
+- Deployment strategies
