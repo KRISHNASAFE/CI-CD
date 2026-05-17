@@ -1,37 +1,61 @@
 pipeline {
     agent any
 
-    environment {
-        // You can set global environment variables here if needed
-    }
-
     stages {
         stage('Checkout') {
             steps {
-                // Checkout code from Git
                 checkout scm
             }
         }
 
-        stage('Build') {
+        stage('Build Node App') {
+            when {
+                expression {
+                    // Only build if node/ folder has changes
+                    return sh(script: "git diff --name-only HEAD~1 HEAD | grep '^node/' || true", returnStatus: true) == 0
+                }
+            }
             steps {
-                echo 'Building application...'
-                // Add your build commands here
-                // e.g., sh 'npm install' or sh 'mvn clean install'
+                dir('node') {
+                    echo 'Building Node app...'
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('Build Web App Static') {
+            when {
+                expression {
+                    // Only build if web-app-static/ folder has changes
+                    return sh(script: "git diff --name-only HEAD~1 HEAD | grep '^web-app-static/' || true", returnStatus: true) == 0
+                }
+            }
+            steps {
+                dir('web-app-static') {
+                    echo 'Building Web App Static...'
+                    sh 'echo "Build commands for web-app-static here"'
+                    // e.g., sh 'npm install' or other build commands
+                }
             }
         }
 
         stage('SonarQube Analysis') {
+            when {
+                anyOf {
+                    expression { sh(script: "git diff --name-only HEAD~1 HEAD | grep '^node/' || true", returnStatus: true) == 0 }
+                    expression { sh(script: "git diff --name-only HEAD~1 HEAD | grep '^web-app-static/' || true", returnStatus: true) == 0 }
+                }
+            }
             steps {
-                // Inject Sonar credentials safely
                 withCredentials([
-                    string(credentialsId: 'SONAR_HOST', variable: 'SONAR_URL'),          // Secret Text credential for URL
-                    usernamePassword(credentialsId: 'SONAR_CREDS', usernameVariable: 'SONAR_USER', passwordVariable: 'SONAR_PASS') // Username & Password
+                    string(credentialsId: 'SONAR_HOST', variable: 'SONAR_URL'),
+                    usernamePassword(credentialsId: 'SONAR_CREDS', usernameVariable: 'SONAR_USER', passwordVariable: 'SONAR_PASS')
                 ]) {
+                    echo "Running Sonar Scanner..."
                     sh """
-                        echo "Running Sonar Scanner..."
                         /opt/sonar-scanner/bin/sonar-scanner \
-                        -Dsonar.projectKey=web-app \
+                        -Dsonar.projectKey=multi-app-project \
                         -Dsonar.sources=. \
                         -Dsonar.host.url=$SONAR_URL \
                         -Dsonar.login=$SONAR_USER \
@@ -44,23 +68,24 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                // Add your test commands here
+                // Add test commands
             }
         }
 
         stage('Deploy') {
             steps {
                 echo 'Deploying application...'
-                // Add your deployment commands here
+                // Add deployment commands
             }
         }
     }
 
     post {
         always {
-            echo 'Cleaning up workspace...'
-            // Optional cleanup steps
-            cleanWs()
+            node {
+                echo 'Cleaning up workspace...'
+                cleanWs()
+            }
         }
         success {
             echo 'Pipeline succeeded!'
