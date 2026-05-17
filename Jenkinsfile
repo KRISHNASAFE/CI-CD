@@ -132,15 +132,19 @@ pipeline {
         }
 
         stage('SonarQube Analysis - Web App') {
-            when {
-                expression {
-                    def changes = sh(
-                        script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
-                        returnStdout: true
-                    ).trim()
-                    return changes != ''
-                }
+            steps {
+        dir('multi-app') {
+            withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_AUTH_TOKEN')]) {
+                sh '''
+                /opt/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
+                  -Dsonar.projectKey=web-app \
+                  -Dsonar.sources=. \
+                  -Dsonar.host.url=$SONAR_HOST_URL \
+                  -Dsonar.login=$SONAR_AUTH_TOKEN
+                '''
             }
+        }
+    }
 
             steps {
                 dir('multi-app') {
