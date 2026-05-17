@@ -3,9 +3,6 @@ pipeline {
 
     environment {
         DOCKER_REGISTRY_CREDS = "DOCKER_REGISTRY_CREDS"
-        DOCKER_USERNAME = ""
-        DOCKER_IMAGE_NODE = "${DOCKER_USERNAME}/node-app"
-        DOCKER_IMAGE_STATIC = "${DOCKER_USERNAME}/webimage"
         SONAR_HOST_URL = credentials('sonar-host-url')
         SONAR_AUTH_TOKEN = credentials('sonar-token-id')
     }
@@ -36,7 +33,16 @@ pipeline {
                         sh 'npm install'
                         sh 'npm run build || true'
                         sh 'npm run test'
-                        sh "docker build -t ${DOCKER_IMAGE_NODE}:v1 ."
+                        withCredentials([
+                            usernamePassword(
+                                credentialsId: "${DOCKER_REGISTRY_CREDS}",
+                                usernameVariable: 'DOCKER_USERNAME',
+                                passwordVariable: 'DOCKER_PASSWORD'
+                            )
+                        ]) {
+                            def dockerImageNode = "${DOCKER_USERNAME}/node-app"
+                            sh "docker build -t ${dockerImageNode}:v1 ."
+                        }
                     }
                 }
             }
@@ -82,13 +88,13 @@ pipeline {
                     withCredentials([
                         usernamePassword(
                             credentialsId: "${DOCKER_REGISTRY_CREDS}",
-                            passwordVariable: 'DOCKER_PASSWORD',
-                            usernameVariable: 'DOCKER_USERNAME'
+                            usernameVariable: 'DOCKER_USERNAME',
+                            passwordVariable: 'DOCKER_PASSWORD'
                         )
                     ]) {
-
+                        def dockerImageNode = "${DOCKER_USERNAME}/node-app"
                         sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                        sh "docker push ${DOCKER_IMAGE_NODE}:v1"
+                        sh "docker push ${dockerImageNode}:v1"
                     }
                 }
             }
@@ -109,7 +115,17 @@ pipeline {
                 dir('multi-app') {
                     script {
                         echo "Building static web project"
-                        sh "docker build -t ${DOCKER_IMAGE_STATIC}:v5 ."
+                        withCredentials([
+                            usernamePassword(
+                                credentialsId: "${DOCKER_REGISTRY_CREDS}",
+                                usernameVariable: 'DOCKER_USERNAME',
+                                passwordVariable: 'DOCKER_PASSWORD'
+                            )
+                        ]) {
+                            def dockerImageStatic = "${DOCKER_USERNAME}/webimage"
+                            sh "docker build -t ${dockerImageStatic}:v5 ."
+                            sh "docker push ${dockerImageStatic}:v5"
+                        }
                     }
                 }
             }
@@ -139,33 +155,6 @@ pipeline {
             }
         }
 
-        stage('Deploy Static Web App') {
-            when {
-                expression {
-                    def changes = sh(
-                        script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
-                        returnStdout: true
-                    ).trim()
-                    return changes != ''
-                }
-            }
-
-            steps {
-                script {
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: "${DOCKER_REGISTRY_CREDS}",
-                            passwordVariable: 'DOCKER_PASSWORD',
-                            usernameVariable: 'DOCKER_USERNAME'
-                        )
-                    ]) {
-
-                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                        sh "docker push ${DOCKER_IMAGE_STATIC}:v5"
-                    }
-                }
-            }
-        }
     }
 
     post {
