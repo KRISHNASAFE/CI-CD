@@ -2,6 +2,82 @@ pipeline {
     agent any
 
     environment {
+        // We will load these dynamically in the steps using withCredentials
+        SONAR_URL = ''
+        SONAR_USER = ''
+        SONAR_PASS = ''
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building the project...'
+                // Add your build commands here, e.g., npm install, mvn clean package, etc.
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    // Load credentials dynamically
+                    withCredentials([
+                        string(credentialsId: 'SONAR_HOST', variable: 'SONAR_URL'),
+                        usernamePassword(credentialsId: 'SONAR_CREDS', usernameVariable: 'SONAR_USER', passwordVariable: 'SONAR_PASS')
+                    ]) {
+                        sh """
+                            echo "Running SonarQube scan..."
+                            /opt/sonar-scanner/bin/sonar-scanner \
+                                -Dsonar.projectKey=web-app \
+                                -Dsonar.sources=. \
+                                -Dsonar.host.url=$SONAR_URL \
+                                -Dsonar.login=$SONAR_USER \
+                                -Dsonar.password=$SONAR_PASS
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+                // Add your test commands here
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying application...'
+                // Add your deployment commands here
+            }
+        }
+    }
+
+    post {
+        always {
+            node {
+                echo 'Pipeline finished. Running cleanup...'
+                sh 'docker logout || true'
+            }
+        }
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Check logs!'
+        }
+    }
+}pipeline {
+    agent any
+
+    environment {
         // Sonar credentials from Jenkins
         SONAR_HOST_URL = credentials('SonarHost')   // Sonar URL credential ID
         SONAR_AUTH_TOKEN = credentials('SonarToken') // Sonar token credential ID
