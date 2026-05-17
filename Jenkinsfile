@@ -1,4 +1,106 @@
 pipeline {
+    agent any  // Runs on any available node
+
+    environment {
+        NODE_APP_DIR = 'node-app'
+        WEB_APP_DIR = 'web-app-static'
+        SONAR_PROJECT_KEY_NODE = 'node-app'
+        SONAR_PROJECT_KEY_WEB = 'web-app-static'
+        SONAR_HOST_URL = 'http://your-sonarqube-server' // Change to your SonarQube URL
+        SONAR_LOGIN = credentials('SonarQubeToken')    // Jenkins credential for Sonar
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/KRISHNASAFE/CI-CD.git',
+                        credentialsId: 'GitHubCred'
+                    ]]
+                ])
+            }
+        }
+
+        stage('Detect Changes') {
+            steps {
+                script {
+                    NODE_CHANGED = sh(script: "git diff --name-only HEAD~1 HEAD | grep '${NODE_APP_DIR}' || true", returnStdout: true).trim()
+                    WEB_CHANGED = sh(script: "git diff --name-only HEAD~1 HEAD | grep '${WEB_APP_DIR}' || true", returnStdout: true).trim()
+                    echo "Node app changes: ${NODE_CHANGED}"
+                    echo "Web app changes: ${WEB_CHANGED}"
+                }
+            }
+        }
+
+        stage('Build Node App') {
+            when {
+                expression { return NODE_CHANGED != '' }
+            }
+            steps {
+                dir("${NODE_APP_DIR}") {
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('SonarQube Scan Node App') {
+            when {
+                expression { return NODE_CHANGED != '' }
+            }
+            steps {
+                dir("${NODE_APP_DIR}") {
+                    withSonarQubeEnv('SonarQube') { // The name must match your Jenkins SonarQube config
+                        sh "sonar-scanner -Dsonar.projectKey=${SONAR_PROJECT_KEY_NODE} -Dsonar.sources=. -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_LOGIN}"
+                    }
+                }
+            }
+        }
+
+        stage('Build Web App') {
+            when {
+                expression { return WEB_CHANGED != '' }
+            }
+            steps {
+                dir("${WEB_APP_DIR}") {
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('SonarQube Scan Web App') {
+            when {
+                expression { return WEB_CHANGED != '' }
+            }
+            steps {
+                dir("${WEB_APP_DIR}") {
+                    withSonarQubeEnv('SonarQube') {
+                        sh "sonar-scanner -Dsonar.projectKey=${SONAR_PROJECT_KEY_WEB} -Dsonar.sources=. -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_LOGIN}"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    if (NODE_CHANGED != '' || WEB_CHANGED != '') {
+                        echo 'Deploying changed apps...'
+                        sh './deploy.sh'
+                    } else {
+                        echo 'No changes detected. Skipping deployment.'
+                    }
+                }
+            }
+        }
+
+    } // stages
+}pipeline {
     agent { label 'jenkins' }   // safer than "any" in some setups
 
     environment {
