@@ -123,7 +123,7 @@ pipeline {
                             )
                         ]) {
                             def dockerImageStatic = "${DOCKER_USERNAME}/webimage"
-                            sh "docker build -t ${dockerImageStatic}:v5 ."
+                            sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
                             sh "docker push ${dockerImageStatic}:v5"
                         }
                     }
