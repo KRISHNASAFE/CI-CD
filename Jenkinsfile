@@ -41,6 +41,7 @@ pipeline {
                             )
                         ]) {
                             def dockerImageNode = "${DOCKER_USERNAME}/node-app"
+                            sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
                             sh "docker build -t ${dockerImageNode}:v1 ."
                         }
                     }
@@ -62,11 +63,11 @@ pipeline {
             steps {
                 dir('node-app') {
                     sh """
-                        sonar-scanner \
-                        -Dsonar.projectKey=node-app \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=${SONAR_HOST_URL} \
-                        -Dsonar.login=${SONAR_AUTH_TOKEN}
+                    /opt/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
+                      -Dsonar.projectKey=node-app \
+                      -Dsonar.sources=. \
+                      -Dsonar.host.url=$SONAR_HOST_URL \
+                      -Dsonar.login=$SONAR_AUTH_TOKEN
                     """
                 }
             }
@@ -132,28 +133,24 @@ pipeline {
         }
 
         stage('SonarQube Analysis - Web App') {
-            steps {
-        dir('multi-app') {
-            withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_AUTH_TOKEN')]) {
-                sh '''
-                /opt/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
-                  -Dsonar.projectKey=web-app \
-                  -Dsonar.sources=. \
-                  -Dsonar.host.url=$SONAR_HOST_URL \
-                  -Dsonar.login=$SONAR_AUTH_TOKEN
-                '''
+            when {
+                expression {
+                    def changes = sh(
+                        script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
+                        returnStdout: true
+                    ).trim()
+                    return changes != ''
+                }
             }
-        }
-    }
 
             steps {
                 dir('multi-app') {
                     sh """
-                        sonar-scanner \
-                        -Dsonar.projectKey=web-app \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=${SONAR_HOST_URL} \
-                        -Dsonar.login=${SONAR_AUTH_TOKEN}
+                    /opt/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
+                      -Dsonar.projectKey=web-app \
+                      -Dsonar.sources=. \
+                      -Dsonar.host.url=$SONAR_HOST_URL \
+                      -Dsonar.login=$SONAR_AUTH_TOKEN
                     """
                 }
             }
