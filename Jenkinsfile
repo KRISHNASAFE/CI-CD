@@ -27,6 +27,16 @@ pipeline {
           return changes != ''
         }
       }
+      stage('SonarQube Analysis - Node App') {
+    when {
+        expression {
+            def changes = sh(
+                script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/' || true",
+                returnStdout: true
+            ).trim()
+            return changes != ''
+        }
+    }
       steps {
         dir('node-app') {
           script {
@@ -83,6 +93,16 @@ pipeline {
           return changes != ''
         }
       }
+      stage('SonarQube Analysis - Web App') {
+    when {
+        expression {
+            def changes = sh(
+                script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
+                returnStdout: true
+            ).trim()
+            return changes != ''
+        }
+    }
       steps {
         dir('multi-app') {
           script {
