@@ -2,6 +2,129 @@ pipeline {
     agent any
 
     environment {
+        SONAR_HOST = credentials('SONAR_HOST')   // Secret text with Sonar URL
+        SONAR_CREDS = credentials('SONAR_CREDS') // Username/password
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/KRISHNASAFE/CI-CD.git',
+                        credentialsId: 'GitHubCred'
+                    ]]
+                ])
+            }
+        }
+
+        stage('Detect Changes') {
+            steps {
+                script {
+                    CHANGED_APPS = []
+                    def changesText = sh(script: "git diff --name-only HEAD~1 HEAD", returnStdout: true).trim()
+                    def changes = changesText.split("\n")
+
+                    for (c in changes) {
+                        if (c.startsWith("node/") && !CHANGED_APPS.contains("node")) {
+                            CHANGED_APPS << "node"
+                        }
+                        if (c.startsWith("web-app-static/") && !CHANGED_APPS.contains("web-app-static")) {
+                            CHANGED_APPS << "web-app-static"
+                        }
+                    }
+
+                    if (CHANGED_APPS.isEmpty()) {
+                        echo "No changes in monitored folders, skipping build."
+                        currentBuild.result = 'SUCCESS'
+                        return
+                    }
+
+                    echo "Changed apps: ${CHANGED_APPS}"
+                }
+            }
+        }
+
+        stage('Build & Test') {
+            when {
+                expression { CHANGED_APPS.size() > 0 }
+            }
+            steps {
+                script {
+                    if (CHANGED_APPS.contains("node")) {
+                        dir('node') {
+                            echo "Building Node app..."
+                            sh 'npm install'
+                            sh 'npm test'
+                        }
+                    }
+
+                    if (CHANGED_APPS.contains("web-app-static")) {
+                        dir('web-app-static') {
+                            echo "Building Web-App-Static..."
+                            sh 'npm install'
+                            sh 'npm test'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            when {
+                expression { CHANGED_APPS.size() > 0 }
+            }
+            steps {
+                script {
+                    if (CHANGED_APPS.contains("node")) {
+                        dir('node') {
+                            sh """
+                            sonar-scanner \
+                              -Dsonar.projectKey=node-app \
+                              -Dsonar.sources=. \
+                              -Dsonar.host.url=${SONAR_HOST} \
+                              -Dsonar.login=${SONAR_CREDS_USR} \
+                              -Dsonar.password=${SONAR_CREDS_PSW}
+                            """
+                        }
+                    }
+                    if (CHANGED_APPS.contains("web-app-static")) {
+                        dir('web-app-static') {
+                            sh """
+                            sonar-scanner \
+                              -Dsonar.projectKey=web-app-static \
+                              -Dsonar.sources=. \
+                              -Dsonar.host.url=${SONAR_HOST} \
+                              -Dsonar.login=${SONAR_CREDS_USR} \
+                              -Dsonar.password=${SONAR_CREDS_PSW}
+                            """
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Cleaning workspace..."
+            cleanWs()
+        }
+        success {
+            echo "Pipeline completed successfully!"
+        }
+        failure {
+            echo "Pipeline failed!"
+        }
+    }
+}pipeline {
+    agent any
+
+    environment {
         // Sonar secret text (URL) and username/password
         SONAR_HOST = credentials('SONAR_HOST')   // Secret text with Sonar URL
         SONAR_CREDS = credentials('SONAR_CREDS') // Username/password credential
