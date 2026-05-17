@@ -6,6 +6,8 @@ pipeline {
     DOCKER_USERNAME = ""
     DOCKER_IMAGE_NODE = "${DOCKER_USERNAME}/node-app"
     DOCKER_IMAGE_STATIC = "${DOCKER_USERNAME}/webimage"
+    SONAR_HOST_URL = credentials('sonar-host-url')
+    SONAR_AUTH_TOKEN = credentials('sonar-token-id')
   }
 
   stages {
@@ -37,6 +39,19 @@ pipeline {
         }
       }
     }
+
+    stage('SonarQube Analysis') {
+            steps {
+                // Run SonarScanner CLI
+                sh """
+                    sonar-scanner \
+                      -Dsonar.projectKey=my-project \
+                      -Dsonar.sources=. \
+                      -Dsonar.host.url=${SONAR_HOST_URL} \
+                      -Dsonar.login=${SONAR_AUTH_TOKEN}
+                """
+            }
+        }
 
     stage('deploy node js app') {
       when {
@@ -78,6 +93,19 @@ pipeline {
       }
     }
 
+    stage('SonarQube Analysis') {
+            steps {
+                // Run SonarScanner CLI
+                sh """
+                    sonar-scanner \
+                      -Dsonar.projectKey=my-project \
+                      -Dsonar.sources=. \
+                      -Dsonar.host.url=${SONAR_HOST_URL} \
+                      -Dsonar.login=${SONAR_AUTH_TOKEN}
+                """
+            }
+        }
+    
     stage('deploy-web-app-static') {
       when {
         expression {
