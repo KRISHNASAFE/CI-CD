@@ -46,5 +46,3 @@ function updateLocalStorage(){
 /*console.log(num1)*/
 
 
-
-
