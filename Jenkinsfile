@@ -7,7 +7,6 @@ pipeline {
     DOCKER_IMAGE_NODE = "${DOCKER_USERNAME}/node-app"
     DOCKER_IMAGE_STATIC = "${DOCKER_USERNAME}/webimage"
     SONAR_HOST_URL = credentials('sonar-host-url')
-    SONAR_AUTH_TOKEN = credentials('sonar-token-id')
   }
 
   stages {
@@ -51,14 +50,17 @@ pipeline {
         }
       }
       steps {
-        // Run SonarScanner CLI
-        sh """
-            sonar-scanner \
-              -Dsonar.projectKey=my-project-node \
-              -Dsonar.sources=. \
-              -Dsonar.host.url=${SONAR_HOST_URL} \
-              -Dsonar.login=${SONAR_AUTH_TOKEN}
-        """
+        // Binding your SONAR_CREDS here
+        withCredentials([usernamePassword(credentialsId: 'SONAR_CREDS', passwordVariable: 'SONAR_PASSWORD', usernameVariable: 'SONAR_USER')]) {
+          sh """
+              sonar-scanner \
+                -Dsonar.projectKey=my-project-node \
+                -Dsonar.sources=. \
+                -Dsonar.host.url=${SONAR_HOST_URL} \
+                -Dsonar.login=${SONAR_USER} \
+                -Dsonar.password=${SONAR_PASSWORD}
+          """
+        }
       }
     }
 
@@ -113,14 +115,17 @@ pipeline {
         }
       }
       steps {
-        // Run SonarScanner CLI
-        sh """
-            sonar-scanner \
-              -Dsonar.projectKey=my-project-static \
-              -Dsonar.sources=. \
-              -Dsonar.host.url=${SONAR_HOST_URL} \
-              -Dsonar.login=${SONAR_AUTH_TOKEN}
-        """
+        // Binding your SONAR_CREDS here
+        withCredentials([usernamePassword(credentialsId: 'SONAR_CREDS', passwordVariable: 'SONAR_PASSWORD', usernameVariable: 'SONAR_USER')]) {
+          sh """
+              sonar-scanner \
+                -Dsonar.projectKey=my-project-static \
+                -Dsonar.sources=. \
+                -Dsonar.host.url=${SONAR_HOST_URL} \
+                -Dsonar.login=${SONAR_USER} \
+                -Dsonar.password=${SONAR_PASSWORD}
+          """
+        }
       }
     }
     
@@ -148,7 +153,9 @@ pipeline {
   post {
     always {
       echo 'Cleaning up'
-      sh 'docker logout || true'
+      node {
+        sh 'docker logout || true'
+      }
     }
   }
 }
