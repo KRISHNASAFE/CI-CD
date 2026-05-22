@@ -152,10 +152,8 @@ pipeline {
 
   post {
     always {
-      echo 'Cleaning up'
-      node {
+      echo 'Cleaning up"
         sh 'docker logout || true'
-      }
     }
   }
 }
