@@ -1,5 +1,5 @@
 pipeline {
-  agent none // Do not allocate a global node automatically
+  agent none // Do not allocate a global executor automatically
 
   environment {
     DOCKER_REGISTRY_CREDS = "DOCKER_REGISTRY_CREDS"
@@ -11,7 +11,7 @@ pipeline {
 
   stages {
     stage('checkout') {
-      agent any // Allocate an agent specifically to pull down the repository
+      agent any // Dynamically allocate an agent to pull the repo
       steps {
         checkout scm
       }
@@ -158,7 +158,7 @@ pipeline {
   post {
     always {
       echo 'Cleaning up'
-      // No extra node { ... } or script { ... } wrapping needed here anymore!
+      // No extra node {} blocks or script {} wrappers are needed here anymore!
     }
   }
 }
