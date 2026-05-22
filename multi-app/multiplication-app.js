@@ -13,7 +13,6 @@ const scoreEl = document.getElementById("score");
 
 let score = JSON.parse(localStorage.getItem("score"));
 
-
 if(!score){
     score = 0;
 }
