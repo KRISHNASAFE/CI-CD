@@ -1,5 +1,5 @@
 pipeline {
-  agent any
+  agent none // Do not allocate a global node automatically
 
   environment {
     DOCKER_REGISTRY_CREDS = "DOCKER_REGISTRY_CREDS"
@@ -11,12 +11,14 @@ pipeline {
 
   stages {
     stage('checkout') {
+      agent any // Allocate agent for checkout
       steps {
         checkout scm
       }
     }
 
     stage('build node.js app') {
+      agent any
       when {
         expression {
           def changes = sh(
@@ -40,6 +42,7 @@ pipeline {
     }
 
     stage('SonarQube Analysis - Node App') {
+      agent any
       when {
         expression {
           def changes = sh(
@@ -64,6 +67,7 @@ pipeline {
     }
 
     stage('deploy node js app') {
+      agent any
       when {
         expression {
           def changes = sh(
@@ -84,6 +88,7 @@ pipeline {
     }
 
     stage('build-web-app-static') {
+      agent any
       when {
         expression {
           def changes = sh(
@@ -104,6 +109,7 @@ pipeline {
     }
 
     stage('SonarQube Analysis - Web App') {
+      agent any
       when {
         expression {
           def changes = sh(
@@ -128,6 +134,7 @@ pipeline {
     }
     
     stage('deploy-web-app-static') {
+      agent any
       when {
         expression {
           def changes = sh(
@@ -151,11 +158,7 @@ pipeline {
   post {
     always {
       echo 'Cleaning up'
-      script {
-        // By wrapping this in a script block, we can safely invoke the sh command 
-        // while relying on the global pipeline agent allocation.
-        sh 'docker logout || true'
-      }
+      // No extra node/script wrappers needed here anymore!
     }
   }
 }
