@@ -35,6 +35,17 @@ pipeline {
                     sh 'npm install'
                     sh 'npm run build || true'
                     sh 'npm test'
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: "${DOCKER_REGISTRY_CREDS}",
+                            usernameVariable: 'DOCKER_USERNAME',
+                            passwordVariable: 'DOCKER_PASSWORD'
+                        )
+                    ]) {
+                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+                        sh "docker build -t $DOCKER_USERNAME/node-app:v1 ."
+                        sh "docker push $DOCKER_USERNAME/node-app:v1"
+                    }
                 }
             }
         }
@@ -59,41 +70,17 @@ pipeline {
                         )
                     ]) {
                         sh """
-                            sonar-scanner \
+                            docker run --rm \
+                                -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                                -e SONAR_LOGIN=${SONAR_USER} \
+                                -e SONAR_PASSWORD=${SONAR_TOKEN} \
+                                -v \$(pwd):/usr/src \
+                                sonarsource/sonar-scanner-cli \
                                 -Dsonar.projectKey=node-app \
                                 -Dsonar.projectName=node-app \
-                                -Dsonar.sources=. \
-                                -Dsonar.host.url=${SONAR_HOST_URL} \
-                                -Dsonar.login=${SONAR_USER} \
-                                -Dsonar.password=${SONAR_TOKEN}
+                                -Dsonar.sources=/usr/src
                         """
                     }
-                }
-            }
-        }
-
-        stage('Deploy Node.js App') {
-            when {
-                expression {
-                    def changes = sh(
-                        script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/' || true",
-                        returnStdout: true
-                    ).trim()
-                    return changes != ''
-                }
-            }
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: "${DOCKER_REGISTRY_CREDS}",
-                        usernameVariable: 'DOCKER_USERNAME',
-                        passwordVariable: 'DOCKER_PASSWORD'
-                    )
-                ]) {
-                    echo "Building & Pushing Node.js Docker image for $DOCKER_USERNAME"
-                    sh "docker build -t ${DOCKER_USERNAME}/node-app:v1 ./node-app"
-                    sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                    sh "docker push ${DOCKER_USERNAME}/node-app:v1"
                 }
             }
         }
@@ -116,6 +103,17 @@ pipeline {
             steps {
                 dir('multi-app') {
                     echo 'Building Static Web App'
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: "${DOCKER_REGISTRY_CREDS}",
+                            usernameVariable: 'DOCKER_USERNAME',
+                            passwordVariable: 'DOCKER_PASSWORD'
+                        )
+                    ]) {
+                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+                        sh "docker build -t $DOCKER_USERNAME/webimage:v5 ."
+                        sh "docker push $DOCKER_USERNAME/webimage:v5"
+                    }
                 }
             }
         }
@@ -140,42 +138,16 @@ pipeline {
                         )
                     ]) {
                         sh """
-                            sonar-scanner \
+                            docker run --rm \
+                                -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                                -e SONAR_LOGIN=${SONAR_USER} \
+                                -e SONAR_PASSWORD=${SONAR_TOKEN} \
+                                -v \$(pwd):/usr/src \
+                                sonarsource/sonar-scanner-cli \
                                 -Dsonar.projectKey=web-app \
                                 -Dsonar.projectName=web-app \
-                                -Dsonar.sources=. \
-                                -Dsonar.host.url=${SONAR_HOST_URL} \
-                                -Dsonar.login=${SONAR_USER} \
-                                -Dsonar.password=${SONAR_TOKEN}
+                                -Dsonar.sources=/usr/src
                         """
-                    }
-                }
-            }
-        }
-
-        stage('Deploy Static Web App') {
-            when {
-                expression {
-                    def changes = sh(
-                        script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
-                        returnStdout: true
-                    ).trim()
-                    return changes != ''
-                }
-            }
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: "${DOCKER_REGISTRY_CREDS}",
-                        usernameVariable: 'DOCKER_USERNAME',
-                        passwordVariable: 'DOCKER_PASSWORD'
-                    )
-                ]) {
-                    dir('multi-app') {
-                        echo "Building & Pushing Static Web App Docker image for $DOCKER_USERNAME"
-                        sh "docker build -t ${DOCKER_USERNAME}/webimage:v5 ."
-                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                        sh "docker push ${DOCKER_USERNAME}/webimage:v5"
                     }
                 }
             }
