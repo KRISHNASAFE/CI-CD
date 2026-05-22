@@ -27,16 +27,6 @@ pipeline {
           return changes != ''
         }
       }
-      stage('SonarQube Analysis - Node App') {
-    when {
-        expression {
-            def changes = sh(
-                script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/' || true",
-                returnStdout: true
-            ).trim()
-            return changes != ''
-        }
-    }
       steps {
         dir('node-app') {
           script {
@@ -50,18 +40,27 @@ pipeline {
       }
     }
 
-    stage('SonarQube Analysis') {
-            steps {
-                // Run SonarScanner CLI
-                sh """
-                    sonar-scanner \
-                      -Dsonar.projectKey=my-project \
-                      -Dsonar.sources=. \
-                      -Dsonar.host.url=${SONAR_HOST_URL} \
-                      -Dsonar.login=${SONAR_AUTH_TOKEN}
-                """
-            }
+    stage('SonarQube Analysis - Node App') {
+      when {
+        expression {
+          def changes = sh(
+            script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/' || true",
+            returnStdout: true
+          ).trim()
+          return changes != ''
         }
+      }
+      steps {
+        // Run SonarScanner CLI
+        sh """
+            sonar-scanner \
+              -Dsonar.projectKey=my-project-node \
+              -Dsonar.sources=. \
+              -Dsonar.host.url=${SONAR_HOST_URL} \
+              -Dsonar.login=${SONAR_AUTH_TOKEN}
+        """
+      }
+    }
 
     stage('deploy node js app') {
       when {
@@ -93,16 +92,6 @@ pipeline {
           return changes != ''
         }
       }
-      stage('SonarQube Analysis - Web App') {
-    when {
-        expression {
-            def changes = sh(
-                script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
-                returnStdout: true
-            ).trim()
-            return changes != ''
-        }
-    }
       steps {
         dir('multi-app') {
           script {
@@ -113,18 +102,27 @@ pipeline {
       }
     }
 
-    stage('SonarQube Analysis') {
-            steps {
-                // Run SonarScanner CLI
-                sh """
-                    sonar-scanner \
-                      -Dsonar.projectKey=my-project \
-                      -Dsonar.sources=. \
-                      -Dsonar.host.url=${SONAR_HOST_URL} \
-                      -Dsonar.login=${SONAR_AUTH_TOKEN}
-                """
-            }
+    stage('SonarQube Analysis - Web App') {
+      when {
+        expression {
+          def changes = sh(
+            script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
+            returnStdout: true
+          ).trim()
+          return changes != ''
         }
+      }
+      steps {
+        // Run SonarScanner CLI
+        sh """
+            sonar-scanner \
+              -Dsonar.projectKey=my-project-static \
+              -Dsonar.sources=. \
+              -Dsonar.host.url=${SONAR_HOST_URL} \
+              -Dsonar.login=${SONAR_AUTH_TOKEN}
+        """
+      }
+    }
     
     stage('deploy-web-app-static') {
       when {
@@ -153,3 +151,4 @@ pipeline {
       sh 'docker logout || true'
     }
   }
+}
