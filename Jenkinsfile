@@ -180,8 +180,14 @@ pipeline {
                         passwordVariable: 'DOCKER_PASSWORD'
                     )
                 ]) {
-                    sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                    sh "docker push ${DOCKER_IMAGE_STATIC}:v5"
+                    echo "Building Static Web App Docker image for $DOCKER_USERNAME"
+                sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+
+                // Use the bound username to tag the image
+                sh "docker build -t ${DOCKER_USERNAME}/webimage:v5 ."
+                sh "docker push ${DOCKER_USERNAME}/webimage:v5"
+                    //sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+                    //sh "docker push ${DOCKER_IMAGE_STATIC}:v5"
                 }
             }
         }
