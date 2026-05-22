@@ -11,7 +11,7 @@ pipeline {
 
   stages {
     stage('checkout') {
-      agent any // Allocate agent for checkout
+      agent any // Allocate an agent specifically to pull down the repository
       steps {
         checkout scm
       }
@@ -158,7 +158,7 @@ pipeline {
   post {
     always {
       echo 'Cleaning up'
-      // No extra node/script wrappers needed here anymore!
+      // No extra node { ... } or script { ... } wrapping needed here anymore!
     }
   }
 }
