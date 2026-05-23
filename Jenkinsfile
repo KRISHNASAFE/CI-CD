@@ -2,6 +2,71 @@ pipeline {
     agent any
 
     environment {
+        GITHUB_CREDENTIALS = 'github-jenkins'    // Your GitHub credential ID
+        DOCKERHUB_CREDENTIALS = 'DockerHub-Cred' // Your DockerHub credential ID
+        DOCKER_IMAGE = 'myusername/myapp'        // Replace with your Docker image name
+    }
+
+    stages {
+        stage('Checkout SCM') {
+            steps {
+                checkout([$class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/KRISHNASAFE/CI-CD.git',
+                        credentialsId: "${GITHUB_CREDENTIALS}"
+                    ]]
+                ])
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo "Building the application..."
+                sh 'echo "Simulate build commands here"'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo "Running tests..."
+                sh 'echo "Simulate test commands here"'
+            }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKERHUB_CREDENTIALS}") {
+                        sh """
+                            docker build -t ${DOCKER_IMAGE}:latest .
+                            docker push ${DOCKER_IMAGE}:latest
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning workspace and logging out Docker...'
+            cleanWs() // Jenkins workspace cleanup
+            sh 'docker logout || true'
+        }
+
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}pipeline {
+    agent any
+
+    environment {
         DOCKER_CREDENTIALS = credentials('DockerHub-Cred') 
         SONAR_TOKEN = credentials('SonarQube-Token')
         SONAR_HOST_URL = 'http://your-sonarqube-server'
