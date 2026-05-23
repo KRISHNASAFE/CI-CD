@@ -54,6 +54,8 @@ pipeline {
                     withCredentials([
                         string(credentialsId: 'SONAR_CREDS', variable: 'SONAR_TOKEN')
                     ]) {
+                        script {
+                            
                         def scannerHome = tool 'sonar-scanner'
                         sh """
                         ${scannerHome}/bin/sonar-scanner \
@@ -63,6 +65,7 @@ pipeline {
                             -Dsonar.host.url=${SONAR_HOST_URL} \
                             -Dsonar.token=${SONAR_TOKEN}
                         """
+                        }
                     }
                 }
             }
@@ -132,6 +135,8 @@ pipeline {
                         string(credentialsId: 'SONAR_CREDS', variable: 'SONAR_TOKEN')
                     ]) {
                         sh """
+                        script {
+                        
                         def scannerHome = tool 'sonar-scanner'
                         ${scannerHome}/bin/sonar-scanner \
                             -Dsonar.projectKey=node-app \
@@ -140,6 +145,7 @@ pipeline {
                             -Dsonar.host.url=${SONAR_HOST_URL} \
                             -Dsonar.token=${SONAR_TOKEN}
                         """
+                    }
                     }
                 }
             }
