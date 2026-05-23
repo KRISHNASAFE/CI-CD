@@ -52,20 +52,15 @@ pipeline {
             steps {
                 dir('node-app') {
                     withCredentials([
-                        usernamePassword(
-                            credentialsId: 'SONAR_CREDS',
-                            usernameVariable: 'SONAR_USER',
-                            passwordVariable: 'SONAR_TOKEN'
-                        )
+                        string(credentialsId: 'SONAR_CREDS', variable: 'SONAR_TOKEN')
                     ]) {
                         sh """
-                            sonar-scanner \
-                                -Dsonar.projectKey=node-app \
-                                -Dsonar.projectName=node-app \
-                                -Dsonar.sources=. \
-                                -Dsonar.host.url=${SONAR_HOST_URL} \
-                                -Dsonar.login=${SONAR_USER} \
-                                -Dsonar.password=${SONAR_TOKEN}
+                        sonar-scanner \
+                            -Dsonar.projectKey=node-app \
+                            -Dsonar.projectName=node-app \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=${SONAR_HOST_URL} \
+                            -Dsonar.token=${SONAR_TOKEN}
                         """
                     }
                 }
@@ -133,20 +128,15 @@ pipeline {
             steps {
                 dir('multi-app') {
                     withCredentials([
-                        usernamePassword(
-                            credentialsId: 'SONAR_CREDS',
-                            usernameVariable: 'SONAR_USER',
-                            passwordVariable: 'SONAR_TOKEN'
-                        )
+                        string(credentialsId: 'SONAR_CREDS', variable: 'SONAR_TOKEN')
                     ]) {
                         sh """
-                            sonar-scanner \
-                                -Dsonar.projectKey=web-app \
-                                -Dsonar.projectName=web-app \
-                                -Dsonar.sources=. \
-                                -Dsonar.host.url=${SONAR_HOST_URL} \
-                                -Dsonar.login=${SONAR_USER} \
-                                -Dsonar.password=${SONAR_TOKEN}
+                        sonar-scanner \
+                            -Dsonar.projectKey=node-app \
+                            -Dsonar.projectName=node-app \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=${SONAR_HOST_URL} \
+                            -Dsonar.token=${SONAR_TOKEN}
                         """
                     }
                 }
