@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_REGISTRY_CREDS = "DOCKER_REGISTRY_CREDS"
-        SONAR_HOST_URL = credentials('sonar-host-url')
+        SONAR_HOST_URL = credentials('sonar-host-url') // SonarQube server URL
     }
 
     stages {
@@ -35,6 +35,7 @@ pipeline {
                     sh 'npm install'
                     sh 'npm run build || true'
                     sh 'npm test'
+
                     withCredentials([
                         usernamePassword(
                             credentialsId: "${DOCKER_REGISTRY_CREDS}",
@@ -63,17 +64,12 @@ pipeline {
             steps {
                 dir('node-app') {
                     withCredentials([
-                        usernamePassword(
-                            credentialsId: 'SONAR_CREDS',
-                            usernameVariable: 'SONAR_USER',
-                            passwordVariable: 'SONAR_TOKEN'
-                        )
+                        string(credentialsId: 'SONAR_CREDS', variable: 'SONAR_TOKEN')
                     ]) {
                         sh """
                             docker run --rm \
                                 -e SONAR_HOST_URL=${SONAR_HOST_URL} \
-                                -e SONAR_LOGIN=${SONAR_USER} \
-                                -e SONAR_PASSWORD=${SONAR_TOKEN} \
+                                -e SONAR_LOGIN=${SONAR_TOKEN} \
                                 -v \$(pwd):/usr/src \
                                 sonarsource/sonar-scanner-cli \
                                 -Dsonar.projectKey=node-app \
@@ -131,17 +127,12 @@ pipeline {
             steps {
                 dir('multi-app') {
                     withCredentials([
-                        usernamePassword(
-                            credentialsId: 'SONAR_CREDS',
-                            usernameVariable: 'SONAR_USER',
-                            passwordVariable: 'SONAR_TOKEN'
-                        )
+                        string(credentialsId: 'SONAR_CREDS', variable: 'SONAR_TOKEN')
                     ]) {
                         sh """
                             docker run --rm \
                                 -e SONAR_HOST_URL=${SONAR_HOST_URL} \
-                                -e SONAR_LOGIN=${SONAR_USER} \
-                                -e SONAR_PASSWORD=${SONAR_TOKEN} \
+                                -e SONAR_LOGIN=${SONAR_TOKEN} \
                                 -v \$(pwd):/usr/src \
                                 sonarsource/sonar-scanner-cli \
                                 -Dsonar.projectKey=web-app \
