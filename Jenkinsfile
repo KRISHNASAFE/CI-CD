@@ -140,8 +140,8 @@ pipeline {
                         def scannerHome = tool 'sonar-scanner'
                             sh """
                         ${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=node-app \
-                            -Dsonar.projectName=node-app \
+                            -Dsonar.projectKey=web-app \
+                            -Dsonar.projectName=web-app \
                             -Dsonar.sources=. \
                             -Dsonar.host.url=${SONAR_HOST_URL} \
                             -Dsonar.token=${SONAR_TOKEN}
