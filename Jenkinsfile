@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_REGISTRY_CREDS = "DOCKER_REGISTRY_CREDS"
-        SONAR_HOST_URL = credentials('sonar-host-url') // SonarQube server URL
+        SONAR_HOST_URL = credentials('sonar-host-url')
     }
 
     stages {
@@ -35,7 +35,6 @@ pipeline {
                     sh 'npm install'
                     sh 'npm run build || true'
                     sh 'npm test'
-
                     withCredentials([
                         usernamePassword(
                             credentialsId: "${DOCKER_REGISTRY_CREDS}",
@@ -69,12 +68,12 @@ pipeline {
                         sh """
                             docker run --rm \
                                 -e SONAR_HOST_URL=${SONAR_HOST_URL} \
-                                -e SONAR_LOGIN=${SONAR_TOKEN} \
                                 -v \$(pwd):/usr/src \
                                 sonarsource/sonar-scanner-cli \
                                 -Dsonar.projectKey=node-app \
                                 -Dsonar.projectName=node-app \
-                                -Dsonar.sources=/usr/src
+                                -Dsonar.sources=/usr/src \
+                                -Dsonar.login=${SONAR_TOKEN}
                         """
                     }
                 }
@@ -132,12 +131,12 @@ pipeline {
                         sh """
                             docker run --rm \
                                 -e SONAR_HOST_URL=${SONAR_HOST_URL} \
-                                -e SONAR_LOGIN=${SONAR_TOKEN} \
                                 -v \$(pwd):/usr/src \
                                 sonarsource/sonar-scanner-cli \
                                 -Dsonar.projectKey=web-app \
                                 -Dsonar.projectName=web-app \
-                                -Dsonar.sources=/usr/src
+                                -Dsonar.sources=/usr/src \
+                                -Dsonar.login=${SONAR_TOKEN}
                         """
                     }
                 }
