@@ -2,282 +2,180 @@ pipeline {
     agent any
 
     environment {
-        GITHUB_CREDENTIALS = 'github-jenkins'    // Your GitHub credential ID
-        DOCKERHUB_CREDENTIALS = 'DockerHub-Cred' // Your DockerHub credential ID
-        DOCKER_IMAGE = 'myusername/myapp'        // Replace with your Docker image name
-    }
-
-    stages {
-        stage('Checkout SCM') {
-            steps {
-                checkout([$class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/KRISHNASAFE/CI-CD.git',
-                        credentialsId: "${GITHUB_CREDENTIALS}"
-                    ]]
-                ])
-            }
-        }
-
-        stage('Build') {
-            steps {
-                echo "Building the application..."
-                sh 'echo "Simulate build commands here"'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo "Running tests..."
-                sh 'echo "Simulate test commands here"'
-            }
-        }
-
-        stage('Docker Build & Push') {
-            steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKERHUB_CREDENTIALS}") {
-                        sh """
-                            docker build -t ${DOCKER_IMAGE}:latest .
-                            docker push ${DOCKER_IMAGE}:latest
-                        """
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            echo 'Cleaning workspace and logging out Docker...'
-            cleanWs() // Jenkins workspace cleanup
-            sh 'docker logout || true'
-        }
-
-        success {
-            echo 'Pipeline completed successfully!'
-        }
-
-        failure {
-            echo 'Pipeline failed!'
-        }
-    }
-}pipeline {
-    agent any
-
-    environment {
-        DOCKER_CREDENTIALS = credentials('DockerHub-Cred') 
-        SONAR_TOKEN = credentials('SonarQube-Token')
-        SONAR_HOST_URL = 'http://your-sonarqube-server'
+        DOCKER_REGISTRY_CREDS = "DOCKER_REGISTRY_CREDS"
+        SONAR_HOST_URL = credentials('sonar-host-url')
     }
 
     stages {
 
-        stage('Checkout SCM') {
+        stage('Checkout') {
             steps {
-                checkout([$class: 'GitSCM',
-                          branches: [[name: '*/main']],
-                          doGenerateSubmoduleConfigurations: false,
-                          extensions: [],
-                          userRemoteConfigs: [[url: 'https://github.com/KRISHNASAFE/CI-CD.git',
-                                               credentialsId: 'GitHub-Jenkins-Cred']]])
+                checkout scm
             }
         }
 
+        /*
+        =====================================================
+        NODE APP
+        =====================================================
+        */
         stage('Build Node.js App') {
             when {
-                expression { fileExists('node-app/package.json') }
-            }
-            steps {
-                dir('node-app') {
-                    sh 'npm install'
-                    sh 'npm run build || echo "No build required"'
-                    sh 'npm test || echo "No tests specified"'
+                expression {
+                    def changes = sh(
+                        script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/' || true",
+                        returnStdout: true
+                    ).trim()
+                    return changes != ''
                 }
-            }
-        }
-
-        stage('Dockerize Node App') {
-            when {
-                expression { fileExists('node-app/Dockerfile') }
-            }
-            steps {
-                dir('node-app') {
-                    script {
-                        docker.withRegistry('', 'DockerHub-Cred') {
-                            def appImage = docker.build("$DOCKER_USERNAME/node-app:v1")
-                            appImage.push()
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('SonarQube Analysis - Node App') {
-            when {
-                expression { fileExists('node-app/package.json') }
-            }
-            steps {
-                dir('node-app') {
-                    withCredentials([string(credentialsId: 'SonarQube-Token', variable: 'SONAR_TOKEN')]) {
-                        sh '''
-                        docker run --rm -e SONAR_HOST_URL=$SONAR_HOST_URL \
-                        -v $(pwd):/usr/src sonarsource/sonar-scanner-cli \
-                        -Dsonar.projectKey=node-app \
-                        -Dsonar.projectName=node-app \
-                        -Dsonar.sources=/usr/src \
-                        -Dsonar.login=$SONAR_TOKEN
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Build Static Web App') {
-            when {
-                expression { fileExists('web-app-static/package.json') }
-            }
-            steps {
-                dir('web-app-static') {
-                    sh 'npm install'
-                    sh 'npm run build || echo "No build required"'
-                }
-            }
-        }
-
-        stage('SonarQube Analysis - Web App') {
-            when {
-                expression { fileExists('web-app-static/package.json') }
-            }
-            steps {
-                dir('web-app-static') {
-                    withCredentials([string(credentialsId: 'SonarQube-Token', variable: 'SONAR_TOKEN')]) {
-                        sh '''
-                        docker run --rm -e SONAR_HOST_URL=$SONAR_HOST_URL \
-                        -v $(pwd):/usr/src sonarsource/sonar-scanner-cli \
-                        -Dsonar.projectKey=web-app-static \
-                        -Dsonar.projectName=web-app-static \
-                        -Dsonar.sources=/usr/src \
-                        -Dsonar.login=$SONAR_TOKEN
-                        '''
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            script {
-                // Must be inside 'script' to have node context
-                node {
-                    echo 'Cleaning workspace and logging out Docker'
-                    sh 'docker logout || true'
-                    cleanWs()
-                }
-            }
-        }
-    }
-}pipeline {
-    agent any
-
-    environment {
-        DOCKER_CREDENTIALS = credentials('DockerHub-Cred') 
-        SONAR_TOKEN = credentials('SonarQube-Token')
-        SONAR_HOST_URL = 'http://your-sonarqube-server'
-    }
-
-    stages {
-
-        stage('Checkout SCM') {
-            steps {
-                checkout([$class: 'GitSCM',
-                          branches: [[name: '*/main']],
-                          doGenerateSubmoduleConfigurations: false,
-                          extensions: [],
-                          userRemoteConfigs: [[url: 'https://github.com/KRISHNASAFE/CI-CD.git',
-                                               credentialsId: 'GitHub-Jenkins-Cred']]])
-            }
-        }
-
-        stage('Build Node.js App') {
-            when {
-                expression { fileExists('node-app/package.json') }
             }
             steps {
                 dir('node-app') {
                     echo 'Building Node.js application'
                     sh 'npm install'
-                    sh 'npm run build || echo "No build required"'
-                    sh 'npm test || echo "No tests specified"'
-                }
-            }
-        }
-
-        stage('Dockerize Node App') {
-            when {
-                expression { fileExists('node-app/Dockerfile') }
-            }
-            steps {
-                dir('node-app') {
-                    withCredentials([usernamePassword(credentialsId: 'DockerHub-Cred', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                        sh 'docker build -t $DOCKER_USERNAME/node-app:v1 .'
-                        sh 'docker push $DOCKER_USERNAME/node-app:v1'
-                    }
+                    sh 'npm run build || true'
+                    sh 'npm test'
                 }
             }
         }
 
         stage('SonarQube Analysis - Node App') {
             when {
-                expression { fileExists('node-app/package.json') }
+                expression {
+                    def changes = sh(
+                        script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/' || true",
+                        returnStdout: true
+                    ).trim()
+                    return changes != ''
+                }
             }
             steps {
                 dir('node-app') {
-                    withCredentials([string(credentialsId: 'SonarQube-Token', variable: 'SONAR_TOKEN')]) {
-                        sh '''
-                        docker run --rm -e SONAR_HOST_URL=$SONAR_HOST_URL \
-                        -v $(pwd):/usr/src sonarsource/sonar-scanner-cli \
-                        -Dsonar.projectKey=node-app \
-                        -Dsonar.projectName=node-app \
-                        -Dsonar.sources=/usr/src \
-                        -Dsonar.login=$SONAR_TOKEN
-                        '''
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'SONAR_CREDS',
+                            usernameVariable: 'SONAR_USER',
+                            passwordVariable: 'SONAR_TOKEN'
+                        )
+                    ]) {
+                        sh """
+                            sonar-scanner \
+                                -Dsonar.projectKey=node-app \
+                                -Dsonar.projectName=node-app \
+                                -Dsonar.sources=. \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.login=${SONAR_USER} \
+                                -Dsonar.password=${SONAR_TOKEN}
+                        """
                     }
                 }
             }
         }
 
-        stage('Build Static Web App') {
+        stage('Deploy Node.js App') {
             when {
-                expression { fileExists('web-app-static/package.json') }
+                expression {
+                    def changes = sh(
+                        script: "git diff --name-only HEAD~1 HEAD | grep '^node-app/' || true",
+                        returnStdout: true
+                    ).trim()
+                    return changes != ''
+                }
             }
             steps {
-                dir('web-app-static') {
-                    echo 'Building Web App'
-                    sh 'npm install'
-                    sh 'npm run build || echo "No build required"'
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: "${DOCKER_REGISTRY_CREDS}",
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+                    echo "Building & Pushing Node.js Docker image for $DOCKER_USERNAME"
+                    sh "docker build -t ${DOCKER_USERNAME}/node-app:v1 ./node-app"
+                    sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+                    sh "docker push ${DOCKER_USERNAME}/node-app:v1"
+                }
+            }
+        }
+
+        /*
+        =====================================================
+        STATIC WEB APP
+        =====================================================
+        */
+        stage('Build Static Web App') {
+            when {
+                expression {
+                    def changes = sh(
+                        script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
+                        returnStdout: true
+                    ).trim()
+                    return changes != ''
+                }
+            }
+            steps {
+                dir('multi-app') {
+                    echo 'Building Static Web App'
                 }
             }
         }
 
         stage('SonarQube Analysis - Web App') {
             when {
-                expression { fileExists('web-app-static/package.json') }
+                expression {
+                    def changes = sh(
+                        script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
+                        returnStdout: true
+                    ).trim()
+                    return changes != ''
+                }
             }
             steps {
-                dir('web-app-static') {
-                    withCredentials([string(credentialsId: 'SonarQube-Token', variable: 'SONAR_TOKEN')]) {
-                        sh '''
-                        docker run --rm -e SONAR_HOST_URL=$SONAR_HOST_URL \
-                        -v $(pwd):/usr/src sonarsource/sonar-scanner-cli \
-                        -Dsonar.projectKey=web-app-static \
-                        -Dsonar.projectName=web-app-static \
-                        -Dsonar.sources=/usr/src \
-                        -Dsonar.login=$SONAR_TOKEN
-                        '''
+                dir('multi-app') {
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'SONAR_CREDS',
+                            usernameVariable: 'SONAR_USER',
+                            passwordVariable: 'SONAR_TOKEN'
+                        )
+                    ]) {
+                        sh """
+                            sonar-scanner \
+                                -Dsonar.projectKey=web-app \
+                                -Dsonar.projectName=web-app \
+                                -Dsonar.sources=. \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.login=${SONAR_USER} \
+                                -Dsonar.password=${SONAR_TOKEN}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Static Web App') {
+            when {
+                expression {
+                    def changes = sh(
+                        script: "git diff --name-only HEAD~1 HEAD | grep '^multi-app/' || true",
+                        returnStdout: true
+                    ).trim()
+                    return changes != ''
+                }
+            }
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: "${DOCKER_REGISTRY_CREDS}",
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+                    dir('multi-app') {
+                        echo "Building & Pushing Static Web App Docker image for $DOCKER_USERNAME"
+                        sh "docker build -t ${DOCKER_USERNAME}/webimage:v5 ."
+                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+                        sh "docker push ${DOCKER_USERNAME}/webimage:v5"
                     }
                 }
             }
@@ -288,7 +186,12 @@ pipeline {
         always {
             echo 'Cleaning workspace and logging out Docker'
             sh 'docker logout || true'
-            cleanWs()
+        }
+        success {
+            echo 'Pipeline executed successfully'
+        }
+        failure {
+            echo 'Pipeline failed'
         }
     }
 }
