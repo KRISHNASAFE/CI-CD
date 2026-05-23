@@ -2,6 +2,108 @@ pipeline {
     agent any
 
     environment {
+        DOCKER_CREDENTIALS = credentials('docker-hub-cred') // Docker Hub username/password
+        SONAR_TOKEN = credentials('sonar-token')           // SonarQube token
+        SONAR_HOST_URL = 'http://<YOUR_SONARQUBE_HOST>:9000' // replace with your SonarQube URL
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/KRISHNASAFE/CI-CD.git',
+                        credentialsId: 'GitHub-Jenkins-Cred'
+                    ]]
+                ])
+            }
+        }
+
+        stage('Build Node.js App') {
+            when {
+                expression { fileExists('node-app/package.json') }
+            }
+            steps {
+                dir('node-app') {
+                    echo 'Building Node.js application'
+                    sh 'npm install'
+                    sh 'npm run build || echo "No build required"'
+                    sh 'npm test || echo "No tests specified"'
+
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh '''
+                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                        docker build -t $DOCKER_USERNAME/node-app:v1 .
+                        docker push $DOCKER_USERNAME/node-app:v1
+                        docker logout
+                        '''
+                    }
+
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                        sh """
+                        docker run --rm -e SONAR_HOST_URL=$SONAR_HOST_URL -e SONAR_LOGIN=$SONAR_TOKEN \
+                        -v \$(pwd):/usr/src sonarsource/sonar-scanner-cli \
+                        -Dsonar.projectKey=node-app \
+                        -Dsonar.projectName=node-app \
+                        -Dsonar.sources=/usr/src \
+                        -Dsonar.login=$SONAR_TOKEN
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Build Static Web App') {
+            when {
+                expression { fileExists('multi-app/index.html') }
+            }
+            steps {
+                dir('multi-app') {
+                    echo 'Building Static Web App'
+
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh '''
+                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                        docker build -t $DOCKER_USERNAME/webimage:v5 .
+                        docker push $DOCKER_USERNAME/webimage:v5
+                        docker logout
+                        '''
+                    }
+
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                        sh """
+                        docker run --rm -e SONAR_HOST_URL=$SONAR_HOST_URL -e SONAR_LOGIN=$SONAR_TOKEN \
+                        -v \$(pwd):/usr/src sonarsource/sonar-scanner-cli \
+                        -Dsonar.projectKey=web-app \
+                        -Dsonar.projectName=web-app \
+                        -Dsonar.sources=/usr/src \
+                        -Dsonar.login=$SONAR_TOKEN
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up workspace'
+            sh 'docker logout || true'
+            cleanWs()
+        }
+        failure {
+            echo 'Pipeline failed! Check logs for details.'
+        }
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+    }
+}pipeline {
+    agent any
+
+    environment {
         SONAR_HOST_URL = credentials('SONAR_HOST_URL')
         SONAR_TOKEN = credentials('SONAR_TOKEN')
         DOCKER_USERNAME = credentials('DOCKER_USERNAME')
