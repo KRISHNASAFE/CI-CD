@@ -1,7 +1,7 @@
 # Use a minimal Node-JS Image.
 FROM node:alpine
 
-#Set working directory
+#Set working directory inside container.
 WORKDIR app
 
 # Copy package.json & *.json files for docker cache.
