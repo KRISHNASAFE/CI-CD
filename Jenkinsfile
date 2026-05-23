@@ -134,10 +134,11 @@ pipeline {
                     withCredentials([
                         string(credentialsId: 'SONAR_CREDS', variable: 'SONAR_TOKEN')
                     ]) {
-                        sh """
-                        script {
+                        script 
+                        {
                         
                         def scannerHome = tool 'sonar-scanner'
+                            sh """
                         ${scannerHome}/bin/sonar-scanner \
                             -Dsonar.projectKey=node-app \
                             -Dsonar.projectName=node-app \
@@ -145,7 +146,7 @@ pipeline {
                             -Dsonar.host.url=${SONAR_HOST_URL} \
                             -Dsonar.token=${SONAR_TOKEN}
                         """
-                    }
+                        }
                     }
                 }
             }
